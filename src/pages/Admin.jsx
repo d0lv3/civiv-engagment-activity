@@ -188,8 +188,10 @@ function Console({ email }) {
             <span className={'dot ' + (live ? 'dot--live' : 'dot--idle')} aria-hidden="true" />
             {live ? 'Live' : 'Syncing'}
           </span>
-          <a className="ghost" href="#/cloud" target="_blank" rel="noreferrer">
-            Open cloud ↗
+          {/* The only way into the board — the student page deliberately
+              has no link to it. */}
+          <a className="ghost ghost--primary" href="#/cloud" target="_blank" rel="noreferrer">
+            Open the board ↗
           </a>
           <button className="ghost" onClick={() => supabase.auth.signOut()}>
             Sign out

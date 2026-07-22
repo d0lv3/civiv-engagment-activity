@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase, isConfigured, EVENT_TITLE } from '../lib/supabase'
 import { useSession } from '../lib/useSession'
 import { getParticipantId, getMyWord, setMyWord, clearMyWord } from '../lib/participant'
@@ -216,13 +215,12 @@ export default function Participate() {
         </section>
       )}
 
+      {/* No link to the cloud from here on purpose — students watch the
+          projector, not their own screens. The board is reached from /#/admin. */}
       <footer className="phone__foot">
         <span className="phone__tally">
           <strong>{total}</strong> {total === 1 ? 'voice' : 'voices'} on the board
         </span>
-        <Link className="phone__link" to="/cloud">
-          View the board
-        </Link>
       </footer>
 
       {error && <p className="phone__offline">Reconnecting…</p>}

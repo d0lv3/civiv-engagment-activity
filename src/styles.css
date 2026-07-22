@@ -199,6 +199,15 @@ code {
   width: 100%;
   justify-content: center;
 }
+.ghost--primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.ghost--primary:hover:not(:disabled) {
+  background: #22242a;
+  border-color: #22242a;
+}
 .ghost--danger:hover:not(:disabled) {
   color: var(--red);
   border-color: #f3c3bf;
@@ -656,7 +665,7 @@ code {
   padding-top: 26px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 14px;
   font-size: 14px;
   color: var(--ink-3);
