@@ -105,6 +105,41 @@ function Login() {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * Words the presenter typed in themselves carry this prefix instead of a real
+ * phone's id, so they can be told apart from student submissions on the board
+ * and cleared out in one go before the class starts.
+ */
+const TEST_PREFIX = 'admin-test-'
+
+const isTestWord = (word) => String(word.participant_id || '').startsWith(TEST_PREFIX)
+
+const testParticipantId = () =>
+  TEST_PREFIX +
+  (globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36))
+
+/**
+ * A spread with deliberate repeats, so adding it exercises the things that
+ * only show up with real data: duplicate merging, the size ramp and the ink
+ * ramp. A flat list of unique words would render as one uniform blob.
+ */
+const SAMPLE_SPREAD = [
+  ['pollution', 4],
+  ['unemployment', 3],
+  ['traffic', 3],
+  ['corruption', 2],
+  ['housing', 2],
+  ['water', 1],
+  ['literacy', 1],
+  ['waste', 1],
+  ['healthcare', 1],
+  ['safety', 1],
+  ['poverty', 1],
+  ['noise', 1],
+]
+
 function Console({ email }) {
   const { words, settings, refresh, live } = useSession()
   const [editingId, setEditingId] = useState(null)
@@ -113,9 +148,12 @@ function Console({ email }) {
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const [draft, setDraft] = useState('')
+
   const tokens = useMemo(() => groupWords(words), [words])
   const url = useMemo(() => participantUrl(), [])
   const raisedHands = words.filter((w) => w.is_speaking)
+  const testWords = words.filter((w) => isTestWord(w))
 
   async function run(action) {
     setBusy(true)
@@ -156,6 +194,39 @@ function Console({ email }) {
   const remove = (id) => {
     if (!window.confirm('Delete this word from the board?')) return
     run(() => supabase.from('words').delete().eq('id', id))
+  }
+
+  // Adding words yourself, to try the board out before anybody is in the room.
+  // These go in under a test id so they can be told apart from real
+  // submissions and cleared in one go.
+  async function addWord(event) {
+    event.preventDefault()
+    const check = validateWord(draft)
+    if (!check.ok) {
+      setError(check.error)
+      return
+    }
+    await run(() =>
+      supabase.from('words').insert({ text: check.text, participant_id: testParticipantId() }),
+    )
+    setDraft('')
+  }
+
+  const addSamples = () =>
+    run(() =>
+      supabase.from('words').insert(
+        SAMPLE_SPREAD.flatMap(([text, times]) =>
+          Array.from({ length: times }, () => ({
+            text,
+            participant_id: testParticipantId(),
+          })),
+        ),
+      ),
+    )
+
+  const removeTestWords = () => {
+    if (!window.confirm(`Remove ${testWords.length} test word(s)? Student words are kept.`)) return
+    run(() => supabase.from('words').delete().like('participant_id', `${TEST_PREFIX}%`))
   }
 
   const removeAll = () => {
@@ -289,6 +360,37 @@ function Console({ email }) {
             </button>
           </div>
 
+          <form className="addword" onSubmit={addWord}>
+            <input
+              className="addword__input"
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                if (error) setError(null)
+              }}
+              placeholder="Add a word yourself…"
+              maxLength={32}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck="false"
+              disabled={busy}
+            />
+            <button className="ghost" type="submit" disabled={busy || !draft.trim()}>
+              Add
+            </button>
+          </form>
+
+          <div className="addword__aside">
+            <button className="linkbtn" onClick={addSamples} disabled={busy}>
+              + sample set
+            </button>
+            {testWords.length > 0 && (
+              <button className="linkbtn linkbtn--danger" onClick={removeTestWords} disabled={busy}>
+                remove {testWords.length} test word{testWords.length === 1 ? '' : 's'}
+              </button>
+            )}
+          </div>
+
           {words.length === 0 ? (
             <p className="panel__empty">Nothing submitted yet.</p>
           ) : (
@@ -324,7 +426,10 @@ function Console({ email }) {
                       </form>
                     ) : (
                       <>
-                        <span className="wordlist__text">{word.text}</span>
+                        <span className="wordlist__text">
+                          {word.text}
+                          {isTestWord(word) && <i className="wordlist__tag">test</i>}
+                        </span>
                         <span className="wordlist__actions">
                           <button
                             className={'linkbtn' + (word.is_speaking ? ' is-on' : '')}

@@ -113,6 +113,18 @@ npm run build
 7. Flip **Submissions open** off once everyone has contributed, so nobody adds
    words mid-discussion.
 
+### Trying it out before the class
+
+The console has an **Add a word yourself…** box, so you can fill the board and
+rehearse without needing a room full of phones. **+ sample set** drops in a
+realistic spread with deliberate repeats, which is the quickest way to see the
+cloud as it will actually look — duplicates merging, the big words pulling to
+the centre, the size and ink hierarchy.
+
+Anything you add this way is tagged **TEST** in the word list and can be cleared
+in one click with **remove N test words**, which leaves real student submissions
+untouched. Worth doing right before the students arrive.
+
 Useful details:
 
 - **Identical words merge.** Three students typing "pollution" produce one big

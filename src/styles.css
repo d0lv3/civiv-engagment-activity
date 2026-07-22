@@ -1010,6 +1010,56 @@ code {
   gap: 2px;
   flex: none;
 }
+
+.wordlist__tag {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: #fff8ec;
+  border: 1px solid #f6e2bd;
+  border-radius: 5px;
+  padding: 1px 5px;
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+
+/* presenter's own word entry, for trying the board out before the class */
+.addword {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.addword__input {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 550;
+  background: var(--paper-2);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.addword__input::placeholder {
+  color: var(--ink-4);
+  font-weight: 500;
+}
+.addword__input:focus {
+  border-color: var(--blue);
+  background: var(--paper);
+  box-shadow: 0 0 0 3px var(--blue-wash);
+}
+
+.addword__aside {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 14px 2px;
+}
 .wordlist__edit {
   display: flex;
   align-items: center;
