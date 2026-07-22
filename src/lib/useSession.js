@@ -64,7 +64,11 @@ export function useSession() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'words' }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, refresh)
       .subscribe((status) => {
-        if (mounted.current) setLive(status === 'SUBSCRIBED')
+        if (!mounted.current) return
+        setLive(status === 'SUBSCRIBED')
+        // Anything written between the first fetch and the socket going live
+        // would otherwise wait for the next poll, so catch up on connect.
+        if (status === 'SUBSCRIBED') refresh()
       })
 
     const poll = setInterval(refresh, POLL_MS)

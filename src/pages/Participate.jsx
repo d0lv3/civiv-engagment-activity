@@ -7,7 +7,7 @@ import { validateWord } from '../lib/words'
 import SetupNotice from '../components/SetupNotice'
 
 export default function Participate() {
-  const { words, settings, loading, error, refresh } = useSession()
+  const { words, settings, loading, error, refresh, setWords } = useSession()
   const [draft, setDraft] = useState('')
   const [formError, setFormError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -24,16 +24,26 @@ export default function Participate() {
   }, [words, cached])
 
   // If the admin deleted this student's word, let them submit again.
+  //
+  // `adopt` below puts the new row straight into `words`, so by the time this
+  // runs the student's own word is already in the list. Without that, this
+  // effect fires on the render right after a successful submit — while `words`
+  // is still the pre-insert list — and instantly throws away the word they
+  // just sent.
   useEffect(() => {
-    if (!loading && cached && words.length >= 0 && !words.some((w) => w.id === cached.id)) {
-      // Only forget it once we have actually seen a successful load.
-      if (!error) {
-        clearMyWord()
-        setCached(null)
-        setJustSubmitted(false)
-      }
-    }
+    if (loading || error || !cached) return
+    if (words.some((w) => w.id === cached.id)) return
+    clearMyWord()
+    setCached(null)
+    setJustSubmitted(false)
   }, [words, cached, loading, error])
+
+  /** Remember a row locally and show it on the board without waiting for a refetch. */
+  function adopt(row) {
+    setWords((prev) => (prev.some((w) => w.id === row.id) ? prev : [...prev, row]))
+    setMyWord(row)
+    setCached(row)
+  }
 
   useEffect(() => {
     if (!cached && !loading && settings.submissions_open) inputRef.current?.focus()
@@ -68,8 +78,7 @@ export default function Participate() {
             .eq('participant_id', participantId)
             .maybeSingle()
           if (existing) {
-            setMyWord(existing)
-            setCached(existing)
+            adopt(existing)
             await refresh()
             return
           }
@@ -81,8 +90,7 @@ export default function Participate() {
         throw insertError
       }
 
-      setMyWord(data)
-      setCached(data)
+      adopt(data)
       setJustSubmitted(true)
       setDraft('')
       await refresh()

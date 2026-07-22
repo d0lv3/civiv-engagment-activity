@@ -33,8 +33,11 @@ export default function WordCloud({ tokens, emptyHint }) {
     const el = containerRef.current
     if (!el) return
 
+    let settled = false
+
     const apply = () => {
       const rect = el.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) settled = true
       setSize((prev) =>
         Math.abs(prev.width - rect.width) < 1 && Math.abs(prev.height - rect.height) < 1
           ? prev
@@ -43,6 +46,19 @@ export default function WordCloud({ tokens, emptyHint }) {
     }
 
     apply()
+
+    // The first measurement can legitimately come back as zero — the
+    // stylesheet may not have landed yet, or the page may have been opened in
+    // a background tab and only shown once the projector was plugged in.
+    // ResizeObserver normally corrects that, but it is only delivered while
+    // the page is actually rendering. Rather than risk the projector sitting
+    // on an empty cloud with no way back, keep checking until there is a real
+    // size to lay out into.
+    const retry = window.setInterval(() => {
+      if (settled) window.clearInterval(retry)
+      else apply()
+    }, 150)
+    const giveUp = window.setTimeout(() => window.clearInterval(retry), 8000)
 
     // ResizeObserver covers panel/layout changes. The window listeners cover
     // going fullscreen on the projector and phones being rotated — belt and
@@ -55,6 +71,8 @@ export default function WordCloud({ tokens, emptyHint }) {
     document.addEventListener('fullscreenchange', apply)
 
     return () => {
+      window.clearInterval(retry)
+      window.clearTimeout(giveUp)
       observer.disconnect()
       window.removeEventListener('resize', apply)
       window.removeEventListener('orientationchange', apply)
