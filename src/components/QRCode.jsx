@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react'
 import QRCodeLib from 'qrcode'
 
-/** Renders `value` as a crisp QR code on a canvas. */
-export default function QRCode({ value, size = 220, className }) {
+/**
+ * Renders `value` as a QR code.
+ *
+ * `size` is the bitmap resolution, `display` the size it is drawn at — render
+ * bigger than you show and the code stays sharp on a projector. The library
+ * writes its own inline width/height onto the canvas, which would otherwise
+ * beat any stylesheet, so the display size is set here afterwards.
+ */
+export default function QRCode({ value, size = 220, display, className }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -13,10 +20,16 @@ export default function QRCode({ value, size = 220, className }) {
       margin: 1,
       errorCorrectionLevel: 'M',
       color: { dark: '#0a0a0b', light: '#ffffff' },
-    }).catch(() => {
-      /* nothing sensible to do on a projector — the URL is shown underneath */
     })
-  }, [value, size])
+      .then(() => {
+        const px = display || size
+        canvas.style.width = `${px}px`
+        canvas.style.height = `${px}px`
+      })
+      .catch(() => {
+        /* nothing sensible to do on a projector — the URL is shown underneath */
+      })
+  }, [value, size, display])
 
   return <canvas ref={canvasRef} className={className} aria-label={`QR code for ${value}`} />
 }

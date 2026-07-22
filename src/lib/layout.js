@@ -176,6 +176,11 @@ export function layoutCloud(tokens, size) {
     sizes = sizes.map((s) => Math.max(ABSOLUTE_MIN_SIZE, s * k))
   }
 
+  // Shade against the sizes actually being drawn, not the pre-budget ramp,
+  // so the ink always spans its full range however much things were scaled.
+  const inkMin = Math.min(...sizes)
+  const inkMax = Math.max(...sizes)
+
   const cx = width / 2
   const cy = height / 2
   const aspect = Math.max(1, width / height)
@@ -211,21 +216,50 @@ export function layoutCloud(tokens, size) {
     if (!spot) return // genuinely nowhere to go — extremely unlikely
 
     placed.push(spot.box)
+    // NB: deliberately no `speaking` here. It changes far more often than the
+    // layout does, and anything cached alongside the geometry goes stale the
+    // moment a hand goes up. The cloud reads that straight off the tokens.
     result.push({
       key: token.key,
       text: token.text,
       count: token.count,
-      speaking: token.speaking,
       x: spot.x,
       y: spot.y,
       fontSize: spot.fontSize,
       rotation,
       weight: weightFor(spot.fontSize),
+      ink: inkFor(spot.fontSize, inkMin, inkMax),
       rank: index,
     })
   })
 
   return result
+}
+
+/**
+ * Ink shade for a word, by size.
+ *
+ * A cloud in one flat black reads as noise from the back of a room. Letting the
+ * quieter words sit back in grey while the most-said ones stay near-black gives
+ * the board depth and makes the hierarchy legible at a glance — and it leaves
+ * blue as the only saturated thing on screen, so a raised hand is unmissable.
+ */
+function inkFor(fontSize, minSize, maxSize) {
+  const span = maxSize - minSize
+
+  // Early in the session every word is unique, so they are all the same size
+  // and there is no hierarchy to express. Draw the lot at full strength —
+  // fading a uniform cloud to grey would just make it look washed out.
+  if (span < 0.5) return 'rgb(11, 11, 13)'
+
+  const t = Math.min(1, Math.max(0, (fontSize - minSize) / span))
+  const eased = Math.pow(t, 0.7)
+  const mix = (near, far) => Math.round(far + (near - far) * eased)
+
+  // Near-black down to a grey that still clears 4.5:1 on white — the quiet
+  // words are also the physically smallest, so they cannot go any lighter and
+  // stay readable from the back of the room.
+  return `rgb(${mix(11, 108)}, ${mix(11, 113)}, ${mix(13, 122)})`
 }
 
 function findSpot({ text, count, fontSize, rotation, rng, placed, width, height, cx, cy, aspect, strict }) {

@@ -83,7 +83,8 @@ export default function CloudView() {
       </section>
 
       <aside className={'joinbox' + (showQR ? '' : ' is-hidden')}>
-        <QRCode value={url} size={200} className="joinbox__qr" />
+        {/* rendered at 2x the displayed size so it stays crisp on the projector */}
+        <QRCode value={url} size={208} display={104} className="joinbox__qr" />
         <div className="joinbox__text">
           <span className="joinbox__label">Scan to join</span>
           <code className="joinbox__url">{url.replace(/^https?:\/\//, '')}</code>

@@ -80,14 +80,23 @@ export default function WordCloud({ tokens, emptyHint }) {
     }
   }, [])
 
-  // Re-run the layout only when the words or the container actually changed —
-  // not when a hand goes up.
+  // Re-run the layout only when the words or the container actually changed.
+  // A hand going up must NOT land here: re-laying out would throw the whole
+  // cloud into a reflow just because somebody wants to speak.
   const signature = useMemo(() => tokens.map((t) => `${t.key}:${t.count}`).join('|'), [tokens])
 
   const placed = useMemo(
     () => layoutCloud(tokens, size),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [signature, size.width, size.height, fontsReady],
+  )
+
+  // ...which is exactly why who is speaking is read straight off `tokens` at
+  // render time instead of out of `placed`. `placed` is memoised on key+count,
+  // so anything read from it is stale the moment a hand changes.
+  const speakingKeys = useMemo(
+    () => new Set(tokens.filter((t) => t.speaking).map((t) => t.key)),
+    [tokens],
   )
 
   // Stagger the very first paint for effect; after that a new word should
@@ -112,30 +121,34 @@ export default function WordCloud({ tokens, emptyHint }) {
         </div>
       )}
 
-      {placed.map((item) => (
-        <span
-          key={item.key}
-          className={'cloud__word' + (item.speaking ? ' is-speaking' : '')}
-          style={{
-            transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
-            zIndex: item.speaking ? 20 : 1,
-          }}
-        >
+      {placed.map((item) => {
+        const speaking = speakingKeys.has(item.key)
+        return (
           <span
-            className="cloud__inner"
+            key={item.key}
+            className={'cloud__word' + (speaking ? ' is-speaking' : '')}
             style={{
-              fontSize: `${item.fontSize}px`,
-              fontWeight: item.weight,
-              '--tilt': `${item.rotation}deg`,
-              '--delay': stagger ? `${Math.min(item.rank * 30, 500)}ms` : '0ms',
+              transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
+              zIndex: speaking ? 20 : 1,
             }}
-            title={item.count > 1 ? `${item.text} — ${item.count} students` : item.text}
           >
-            {item.text}
-            {item.count > 1 && <i className="cloud__count">{item.count}</i>}
+            <span
+              className="cloud__inner"
+              style={{
+                fontSize: `${item.fontSize}px`,
+                fontWeight: item.weight,
+                '--tilt': `${item.rotation}deg`,
+                '--delay': stagger ? `${Math.min(item.rank * 30, 500)}ms` : '0ms',
+                '--word-ink': item.ink,
+              }}
+              title={item.count > 1 ? `${item.text} — ${item.count} students` : item.text}
+            >
+              {item.text}
+              {item.count > 1 && <i className="cloud__count">{item.count}</i>}
+            </span>
           </span>
-        </span>
-      ))}
+        )
+      })}
     </div>
   )
 }

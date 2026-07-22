@@ -106,9 +106,10 @@ npm run build
 3. Students scan and send their word. It appears within a second.
 4. When you're ready to discuss, flip **Speaking enabled** on the admin page. The
    **Speak** button unlocks on every phone.
-5. A student taps **Speak** — their word turns blue and grows. You'll see them
-   listed under "hands raised".
-6. Call on them. Afterwards hit **lower**, or **Clear all** to reset every hand.
+5. A student taps **Speak** — their word turns blue and grows, and every other
+   phone's button greys out to "Someone is speaking". **One voice at a time.**
+6. Call on them. When they're done they lower their own hand, or you hit
+   **Lower** on the console — either way the floor opens for the next student.
 7. Flip **Submissions open** off once everyone has contributed, so nobody adds
    words mid-discussion.
 
@@ -117,8 +118,14 @@ Useful details:
 - **Identical words merge.** Three students typing "pollution" produce one big
   `Pollution³` rather than three overlapping copies — that's what makes the size
   differences meaningful. Any of those three raising a hand highlights it.
-- **You can highlight a word yourself** from the admin word list ("highlight"),
-  which is handy for pointing at a word while you talk about it.
+- **You can hand the floor to anyone** from the admin word list ("highlight"),
+  handy for pointing at a word while you talk about it. It takes the floor off
+  whoever currently holds it, so you never have to lower them first.
+- **Only one word can be blue at a time.** This is enforced by a unique index in
+  Postgres, not just by greying out the button — a student poking at the console
+  still cannot take the floor from whoever is holding it. If you set the database
+  up before this rule existed, run
+  [`supabase/add-one-speaker.sql`](supabase/add-one-speaker.sql) once.
 - **Turning speaking off drops every raised hand** automatically.
 - **One word per phone.** If a student needs theirs changed, edit or delete it in
   the admin list — deleting frees them to submit again.

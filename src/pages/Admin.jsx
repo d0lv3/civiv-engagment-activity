@@ -134,8 +134,21 @@ function Console({ email }) {
   const setFlag = (patch) =>
     run(() => supabase.from('settings').update(patch).eq('id', 1))
 
+  // Only one word may hold the floor, so handing it to somebody means taking
+  // it off whoever has it. Doing that here rather than making you lower the
+  // last speaker first — and it keeps us clear of the one-speaker index.
   const setSpeaking = (id, value) =>
-    run(() => supabase.from('words').update({ is_speaking: value }).eq('id', id))
+    run(async () => {
+      if (!value) {
+        return supabase.from('words').update({ is_speaking: false }).eq('id', id)
+      }
+      const cleared = await supabase
+        .from('words')
+        .update({ is_speaking: false })
+        .eq('is_speaking', true)
+      if (cleared.error) return cleared
+      return supabase.from('words').update({ is_speaking: true }).eq('id', id)
+    })
 
   const clearHands = () =>
     run(() => supabase.from('words').update({ is_speaking: false }).eq('is_speaking', true))
@@ -225,10 +238,16 @@ function Console({ email }) {
 
           <div className="panel__row">
             <div>
-              <strong>{raisedHands.length}</strong> hand{raisedHands.length === 1 ? '' : 's'} raised
+              {raisedHands.length ? (
+                <>
+                  <strong>{raisedHands[0].text}</strong> has the floor
+                </>
+              ) : (
+                <span className="panel__muted">Nobody is speaking</span>
+              )}
             </div>
             <button className="ghost" onClick={clearHands} disabled={busy || !raisedHands.length}>
-              Clear all
+              Lower
             </button>
           </div>
 
@@ -237,7 +256,7 @@ function Console({ email }) {
               {raisedHands.map((w) => (
                 <li key={w.id}>
                   <span className="hands__word">{w.text}</span>
-                  <button className="linkbtn" onClick={() => setSpeaking(w.id, false)}>
+                  <button className="linkbtn" onClick={() => setSpeaking(w.id, false)} disabled={busy}>
                     lower
                   </button>
                 </li>
@@ -249,7 +268,7 @@ function Console({ email }) {
         {/* ---- middle column: join info + preview -------------------- */}
         <section className="panel panel--join">
           <h2 className="panel__title">Join link</h2>
-          <QRCode value={url} size={168} className="panel__qr" />
+          <QRCode value={url} size={300} display={150} className="panel__qr" />
           <code className="panel__url">{url}</code>
           <button className="ghost ghost--wide" onClick={copyLink}>
             {copied ? 'Copied ✓' : 'Copy link'}

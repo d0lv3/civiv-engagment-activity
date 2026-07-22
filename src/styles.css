@@ -96,6 +96,9 @@ code {
 .dot--open {
   background: var(--green);
 }
+.dot--busy {
+  background: var(--amber);
+}
 .dot--idle {
   background: var(--ink-4);
 }
@@ -294,6 +297,10 @@ code {
     radial-gradient(46% 50% at 82% 78%, rgba(11, 11, 13, 0.028), transparent 72%);
 }
 
+/* No `will-change` here on purpose. It was promoting every single word to its
+   own compositor layer — forty-odd layers on the projector — which is a known
+   way to end up with a board that only redraws when the browser is poked. The
+   transition is cheap enough without it. */
 .cloud__word {
   position: absolute;
   left: 0;
@@ -301,7 +308,6 @@ code {
   width: 0;
   height: 0;
   transition: transform 0.95s var(--ease);
-  will-change: transform;
 }
 
 .cloud__inner {
@@ -314,7 +320,8 @@ code {
   white-space: nowrap;
   line-height: 0.92;
   letter-spacing: -0.028em;
-  color: var(--ink);
+  /* per-word shade from layout.js; falls back to the flat ink token */
+  color: var(--word-ink, var(--ink));
   transform: translate(-50%, -50%) rotate(var(--tilt)) scale(var(--scale));
   transform-origin: center center;
   transition:
@@ -480,17 +487,15 @@ code {
 
 .joinbox {
   position: fixed;
-  right: clamp(18px, 2.4vw, 34px);
-  bottom: clamp(18px, 2.4vw, 34px);
+  right: clamp(16px, 2vw, 28px);
+  bottom: clamp(16px, 2vw, 28px);
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 16px 22px 16px 16px;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  gap: 13px;
+  padding: 11px 16px 11px 11px;
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 15px;
   box-shadow: var(--shadow-md);
   transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
   z-index: 40;
@@ -503,28 +508,28 @@ code {
 
 .joinbox__qr {
   display: block;
-  border-radius: 10px;
-  width: 132px;
-  height: 132px;
+  border-radius: 8px;
+  width: 104px;
+  height: 104px;
 }
 
 .joinbox__label {
   display: block;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ink-4);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .joinbox__url {
-  font-size: 15px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink-2);
   letter-spacing: -0.01em;
   word-break: break-all;
-  max-width: 240px;
+  max-width: 180px;
   display: block;
 }
 
@@ -829,6 +834,10 @@ code {
   color: var(--ink-4);
   font-size: 14px;
   padding: 18px 0;
+}
+
+.panel__muted {
+  color: var(--ink-4);
 }
 
 .panel--join {

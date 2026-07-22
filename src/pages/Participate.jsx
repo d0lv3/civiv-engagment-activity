@@ -109,7 +109,16 @@ export default function Participate() {
         .from('words')
         .update({ is_speaking: next })
         .eq('id', myWord.id)
-      if (updateError) throw updateError
+      if (updateError) {
+        // 23505 = the one-speaker index rejected it; somebody beat them to it
+        // in the moment between the board updating and the tap landing.
+        if (updateError.code === '23505') {
+          setFormError('Someone else is speaking right now — wait for them to finish.')
+          await refresh()
+          return
+        }
+        throw updateError
+      }
       await refresh()
     } catch (err) {
       setFormError(err.message || 'Could not update. Try again.')
@@ -120,6 +129,12 @@ export default function Participate() {
 
   const total = words.length
   const speaking = myWord?.is_speaking
+
+  // One voice at a time. While somebody holds the floor nobody else can take
+  // it — they have to lower their hand first, or the presenter lowers it for
+  // them from the console.
+  const floorHolder = words.find((w) => w.is_speaking)
+  const someoneElseHasFloor = Boolean(floorHolder && floorHolder.id !== myWord?.id)
 
   return (
     <main className="phone">
@@ -150,9 +165,9 @@ export default function Participate() {
               type="button"
               className={'btn btn--speak' + (speaking ? ' is-active' : '')}
               onClick={toggleHand}
-              disabled={!settings.speaking_enabled || busy}
+              disabled={!settings.speaking_enabled || someoneElseHasFloor || busy}
             >
-              {speaking ? 'Lower my hand' : 'Speak'}
+              {speaking ? 'Lower my hand' : someoneElseHasFloor ? 'Someone is speaking' : 'Speak'}
             </button>
 
             <p className="phone__hint">
@@ -164,7 +179,14 @@ export default function Participate() {
               ) : speaking ? (
                 <>
                   <span className="dot dot--live" aria-hidden="true" />
-                  Your word is highlighted in blue on the big screen.
+                  You have the floor — your word is blue on the big screen. Lower your
+                  hand when you're done so someone else can speak.
+                </>
+              ) : someoneElseHasFloor ? (
+                <>
+                  <span className="dot dot--busy" aria-hidden="true" />
+                  <strong>{floorHolder.text}</strong> has the floor. You can speak once
+                  they lower their hand.
                 </>
               ) : (
                 <>

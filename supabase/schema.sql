@@ -29,6 +29,14 @@ create unique index if not exists words_participant_key
 create index if not exists words_created_at_idx
   on public.words (created_at);
 
+-- One voice at a time. Every row where is_speaking is true indexes the same
+-- value, so a second raised hand is rejected outright. This is what makes the
+-- rule real: the phones also grey the button out, but a student poking at the
+-- console still cannot take the floor from whoever is holding it.
+create unique index if not exists words_one_speaker
+  on public.words ((is_speaking))
+  where is_speaking;
+
 -- Single-row table holding the live session state that the admin controls.
 create table if not exists public.settings (
   id                smallint primary key default 1,
